@@ -3,11 +3,11 @@ Name: authd
 Version: @VERSION@
 Release: @RELEASE@%{?dist}
 License: GPLv2+
-URL: https://fedorahosted.org/authd/
+URL: https://github.com/InfrastructureServices/authd
 Obsoletes: pidentd < 3.2
 Provides: pidentd = 3.2
 Requires(post): openssl
-Source0: http://fedorahosted.org/releases/a/u/authd/authd-1.4.3.tar.gz
+Source0: https://github.com/InfrastructureServices/authd/archive/authd-%{version}.tar.gz
 Source1: auth.socket
 Source2: auth@.service
 
@@ -24,25 +24,24 @@ supports IPv6 and IPv4 as well as the more popular features
 of pidentd.
 
 %prep
-%setup -q
+%autosetup
 
 %build
-CFLAGS=$RPM_OPT_FLAGS make prefix=%{_prefix}
+CFLAGS=%{optflags} make prefix=%{_prefix}
 
 %install
-rm -rf $RPM_BUILD_ROOT
-%makeinstall
+make install
 
-install -d ${RPM_BUILD_ROOT}%{_unitdir}/
-install -m 644 %{SOURCE1} ${RPM_BUILD_ROOT}%{_unitdir}/
-install -m 644 %{SOURCE2} ${RPM_BUILD_ROOT}%{_unitdir}/
+install -d %{buildroot}%{_unitdir}/
+install -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/
+install -m 644 %{SOURCE2} %{buildroot}%{_unitdir}/
 
-install -d ${RPM_BUILD_ROOT}%{_sysconfdir}/
-touch ${RPM_BUILD_ROOT}%{_sysconfdir}/ident.key
+install -d %{buildroot}%{_sysconfdir}/
+touch %{buildroot}%{_sysconfdir}/ident.key
 
-install -d ${RPM_BUILD_ROOT}/%{_mandir}/man1/
-help2man -N -v -V ${RPM_BUILD_ROOT}/%{_sbindir}/in.authd -o \
-         ${RPM_BUILD_ROOT}/%{_mandir}/man1/in.authd.1
+install -d %{buildroot}/%{_mandir}/man1/
+help2man -N -v -V %{buildroot}/%{_sbindir}/in.authd -o \
+         %{buildroot}/%{_mandir}/man1/in.authd.1
 
 %find_lang %{name}
 
