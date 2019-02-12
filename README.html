@@ -1,0 +1,547 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+
+<html>
+  <head>
+    <meta name="generator" content=
+    "HTML Tidy for Linux/x86 (vers 1st June 2002), see www.w3.org">
+
+    <title>README for authd</title>
+  </head>
+
+  <body>
+    <h1>authd: a RFC 1413 ident protocol daemon</h1>
+    <hr>
+
+    <ol>
+      <li>
+        FEATURES 
+
+        <ul>
+          <li>written in C; small and fast</li>
+
+          <li>
+            two operation modes: 
+
+            <ol>
+              <li>server via inetd/xinetd</li>
+
+              <li>script/interactive via command line
+              arguments</li>
+            </ol>
+          </li>
+
+          <li>supports IPv6 and IPv4</li>
+
+          <li>pidentd option compatibility</li>
+
+          <li>easy to use openssl compatible strong symmetric
+          encryption</li>
+
+          <li>many privacy and anonymizing options</li>
+
+          <li>works well even with broken clients</li>
+
+          <li>internationalized log and help messages</li>
+
+          <li>free software licensed under the GPL. This program is
+          released under the GPL with the additional exemption that
+          compiling, linking, and/or using OpenSSL is allowed.</li>
+        </ul>
+      </li>
+
+      <li>
+        REQUIREMENTS &amp; SETUP 
+
+        <ol>
+          <li>
+            Building<br>
+             Although authd was built and tested on Red Hat Linux
+            9, Red Hat Enterprise Linux and Fedora Core 1 &amp; 2,
+            it will probably compile on any recent 2003/2004-era
+            GNU/Linux distro with openssl and recent versions of
+            the GNU tool chain (compiler + make) and GNU C library.
+            
+
+            <p>authd does not require autoconf. If needed, change
+            any defaults by editing the <samp>config.h</samp> file.
+            To build, simply run "<kbd>make</kbd>"</p>
+          </li>
+
+          <li>
+            Installing<br>
+             "<kbd>make install</kbd>" will install
+            "<samp>in.authd</samp>" and any translations in
+            "<samp>/usr/local/sbin</samp>" and
+            "<samp>/usr/local/locale</samp>" respectively, so
+            you'll need to set the <kbd>make</kbd> variable
+            <var>prefix</var> if you want the files to go somewhere
+            else than "<samp>/usr/local</samp>". It will install as
+            the filename "<samp>in.authd</samp>" to reflect that it
+            is intended to run as a inetd/xinetd hosted server; in
+            other words, server input/output is connected to stdin
+            and stdout. 
+
+            <p>If you're using encryption, put a one line pass
+            phrase in the file "<samp>/etc/ident.key</samp>" (or
+            another place if you change the default location via a
+            server option), making sure the file is readable by the
+            authd process and NOT readable/writable by others
+            ("<kbd>chmod o-rw</kbd>"). <strong>If the permissions
+            are not set correctly, authd will refuse to
+            encrypt.</strong></p>
+          </li>
+
+          <li>
+            Running<br>
+             authd should be able to read
+            <samp>/proc/net/tcp</samp> and/or
+            <samp>/proc/net/tcp6</samp> to actually match users to
+            ports-- although it will run without these files. 
+
+            <p>A sample xinetd configuration file has been
+            provided; copying <kbd>xinetd.conf.auth</kbd> to
+            <kbd>/etc/xinetd.d</kbd> should work for Red Hat
+            distributions. Be sure to make any changes needed to
+            the default values and path as needed then
+            restart/reload the xinetd daemon to use it.</p>
+
+            <p>All of the options available can be seen with the
+            "<kbd>-h</kbd>" option. Some notes on some of the less
+            obvious options and parameters:</p>
+
+            <ul>
+              <li><kbd>--abrupt</kbd><br>
+               If an error occurs after the client has sent the
+              port pair, just drop the connection rather than tell
+              the client (allowed by RFC 1413). authd may do this
+              anyway for certain errors that prevent it from
+              sending a reply (I/O error or an out of memory
+              situation). "<kbd>--abrupt</kbd>" overrides
+              "<kbd>-e</kbd>" and "<kbd>--xerror</kbd>".</li>
+
+              <li><kbd>-E</kbd>[<var>cipher</var>]<br>
+               Any symmetric block/stream encryption method
+              supported by the installed openssl can be used as a
+              parameter. To see a list of available
+              <var>cipher</var>s, use "<kbd>openssl enc
+              -h</kbd>"</li>
+
+              <li><kbd>-l</kbd>[<var>mask</var>]<br>
+               An optional base 10, base 8 (prefix with
+              "<kbd>0</kbd>"), or base 16 (prefix with
+              "<kbd>0x</kbd>") bit mask of system log priority
+              levels that you wish to log. For example, an
+              <var>mask</var> of 17<small><sub>8</sub></small>
+              ("<kbd>-l017</kbd>") only logs messages of priority
+              error or higher.<br>
+              </li>
+
+              <li>
+                <kbd>--fn</kbd>[<kbd>=</kbd><var>uint</var>]<br>
+                 Sends the full-name/"finger" info rather than the
+                username. Some systems contain additional fields of
+                information after the full name of a person, such
+                as the office, office phone number and home phone,
+                separated by commas. To display only the first
+                field, specify "<kbd>1</kbd>". To specify up to two
+                fields, specify "<kbd>2</kbd>"... and so on. 
+
+                <p>If the "<kbd>-n</kbd>" option is also specified,
+                then the numeric user id will be followed by the
+                2nd up to <var>uint</var> fields providing that
+                <var>uint</var> is greater than two.</p>
+              </li>
+
+              <li><kbd>--hybrid</kbd><br>
+               Only applies to IPv6 addresses activated with the
+              "--verbose" option. When used, the bottom 32 bits of
+              the address with be displayed in the traditional IPv4
+              format of four dot separated base 10 numbers rather
+              than the IPv6 style of eight 16-bit colon separated
+              hex pairs.</li>
+
+              <li><kbd>--mapped=</kbd><var>ipv6</var><br>
+               Allows IPv6 addresses whose first 96 bits (in other
+              words, everything except for the last 32 bits) are
+              <var>ipv6</var> to match IPv4 addresses which are
+              identical to the bottom 32-bits of the IPv6 address.
+              Useful for IPv6/IPv4 multi-interface environments
+              where IPv4 addresses on different interfaces are
+              mapped to IPv6 addresses. <em>It does not match IPv4
+              "<samp>localhost</samp>" (<samp>127.0.0.1</samp>)
+              with IPv6's equivalent (<samp>::1</samp>).</em></li>
+
+              <li>
+              <kbd>--os</kbd>[<kbd>=</kbd><var>rfc1340</var>]<br>
+               Without an argument, it will display the same value
+              returned by the "<kbd>uname</kbd>" command as the
+              operating system, rather than "UNIX". You may wish to
+              do this if the username returned (perhaps from pam
+              talking to a Windows server) does not make sense
+              within a traditional UNIX or Linux system.</li>
+
+              <li><kbd>--resolve</kbd><br>
+               Only applies to addresses and ports activated with
+              the "--verbose" option. Causes <samp>in.authd</samp>
+              to resolve addresses using nameservers, and replace
+              service port numbers with their names, when
+              available. <em>Resolving addresses slows the server
+              down.</em></li>
+
+              <li>
+              <kbd>--username</kbd>[<kbd>=</kbd><var>login</var>]<br>
+
+               Causes authd to report the username <var>login</var>
+              for all valid established tcp connections, regardless
+              of the actual user. <var>login</var> must point to a
+              valid entry in the password database. If used in
+              conjunction with "<kbd>-n</kbd>", the uid of the
+              <var>login</var> will be returned. It will
+              <em>not</em> change the uid number provided with the
+              "<kbd>--verbose</kbd>" option.
+              "<kbd>--username</kbd>" is useful for providing the
+              actual user on single user workstations or servers
+              that have changed their original associated uids to
+              effective ones. It is also useful for masking the
+              true username for privacy purposes (in this case
+              authd is running as a dummy placebo server).</li>
+
+              <li>
+                <kbd>--verbose</kbd><br>
+                 Adds the following information after the username
+                or full name (depending on the option selected),
+                separated by commas: 
+
+                <ul>
+                  <li>true userid number<br>
+                   Different from "<kbd>-n</kbd>" which is affected
+                  by "<kbd>--username</kbd>".</li>
+
+                  <li>time stamp<br>
+                   Date and time is provided in ASCII ISO 8601
+                  UTC/Zulu (aka Greenwich Median, or GMT) time. The
+                  day of week and time in the authd's local
+                  timezone using the locale's format and encoding
+                  are also provided in parentheses.</li>
+
+                  <li>local address and port<br>
+                   Port is separated from the address by a vertical
+                  bar, "local" is from the perspective of the authd
+                  server.</li>
+
+                  <li>remote address and port<br>
+                   Port is separated from the address by a vertical
+                  bar, "remote" is from the perspective of the
+                  authd server.</li>
+                </ul>
+              </li>
+            </ul>
+            The authd daemon will not read any input from stdin if
+            port pairs are specified as parameters. Also, only the
+            first port pair will be processed unless the
+            "<kbd>-m</kbd>" option is specified.
+          </li>
+
+          <li>
+            Testing 
+
+            <ol>
+              <li>Run "<kbd>netstat -A inet -n</kbd>" and find an
+              established tcp connection.</li>
+
+              <li>
+                Input the two ports prefixed with colons as single
+                command line argument (no whitespace unless the
+                entire pair is enclosed in quotes for the command
+                line parser), in the same order, separated by a
+                comma. Example: 
+
+                <p><samp>$ <kbd>/usr/sbin/in.inetd
+                33201,6667</kbd></samp></p>
+              </li>
+
+              <li>Execute "<kbd>telnet localhost auth</kbd>" and
+              type the two ports separated by a comma. <em>The two
+              ports selected must have a foreign address of
+              <samp>localhost</samp>, or <samp>127.0.0.1</samp> as
+              well as a matching local address.</em> If they do
+              not, a <samp>NO-USER</samp> error will be
+              returned.</li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+
+      <li>
+        DIFFERENCES FROM PIDENTD 3.0.18 
+
+        <ul>
+          <li>no config file<br>
+           There is no "<samp>/etc/ident.conf</samp>", as all the
+          options you need for a simple inet super daemon based
+          server can be easily passed from the command line</li>
+
+          <li>no special crypto tools<br>
+           Key generation requires no special tools; a plain text
+          pass phrase in a file is all that's required to encrypt.
+          To decrypt, the openssl enc tool is used.</li>
+
+          <li>no standalone server mode<br>
+           For a simple server, launching via the ubiquitous
+          inetd/xinetd is all that's needed. The super server
+          provides most of the options present in pidentd.</li>
+
+          <li>no protocol extensions<br>
+           The <kbd>VERSION</kbd> and <kbd>QUIT</kbd> commands are
+          unnecessary, a security risk in the case of
+          <kbd>VERSION</kbd>, and a violation of RFC 1413 protocol.
+          As they are not used by any client, they have been
+          intentionally omitted. The "<kbd>-e</kbd>" option is
+          instead used to mask error messages.<br>
+          </li>
+
+          <li>no automatic verbose encryption<br>
+           Encrypting replies does not automatically include port
+          and time information, which makes the reply excessively
+          long. This information may be included with the
+          "<kbd>--verbose</kbd>" option.</li>
+        </ul>
+      </li>
+
+      <li>
+        HOW TO INCREASE PRIVACY 
+
+        <ul>
+          <li>You can allow users to either opt-out or opt-in from
+          exposing their userid creating a file in their home
+          directory (defaults are "<samp>~/.noident</samp>" and
+          "<samp>~/.ident</samp>" respectively) and by setting the
+          appropriate server option ("<kbd>-N</kbd>" or
+          "<kbd>--ident</kbd>"). If both options are set then
+          "<samp>~/.noident</samp>" will cancel out a
+          "<samp>~/.ident</samp>" if both are present. If a file is
+          present (or not present) which indicates that the user
+          does not wish his information to be revealed, a
+          <samp>HIDDER-USER</samp> error message is returned.</li>
+
+          <li>
+            If you just want an ident server to speed up broken
+            servers that insist on some form of ident but you don't
+            want to reveal any usernames, you can make authd "lie"
+            to clients and tell them that the ports are owned by
+            any arbitrary user with the "<kbd>--username</kbd>"
+            option. When set to its default, the authd daemon will
+            reply with either <samp>NO-USER</samp> errors or
+            "<samp>nobody</samp>" as the port owner. Note that the
+            argument supplied to "<kbd>--username</kbd>" must be a
+            valid username. As some daemons do run as
+            "<samp>nobody</samp>", you may wish to create a special
+            username just for authd, such as
+            "<samp>somebody</samp>", using the command: 
+
+            <p><samp>$ <kbd>/usr/sbin/useradd -s /sbin/nologin -r
+            somebody</kbd></samp></p>
+          </li>
+
+          <li>Encryption allows the system administrator owning the
+          authd server to be aware of any ident information that is
+          sent to him from remote sites while not unnecessarily
+          exposing the usernames to any anonymous system.</li>
+
+          <li>The "<kbd>-e</kbd>" option can be used to return
+          <samp>UNKNOWN-ERROR</samp> instead of
+          <samp>INVALID-PORT</samp>, <samp>NO-USER</samp>, and
+          <samp>HIDDEN-USER</samp>.<br>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        HOW TO USE ENCRYPTION 
+
+        <ol>
+          <li>put a plain text password or pass phrase that is
+          terminated by a newline in the file
+          "<samp>/etc/ident.key</samp>". Any additional data after
+          the newline is ignored. If the pass phrase is in a
+          different file and/or location, use the
+          "<kbd>--passwd</kbd>" option to tell authd where it
+          is.</li>
+
+          <li>
+            Make sure the owner/group and permissions are set so
+            that the daemon (which usually runs as
+            "<samp>nobody</samp>" if you use the default xinetd
+            configuration file) can read it. Make sure that other
+            can't read or write to it by using: 
+
+            <p><samp>$ <kbd>chmod o-rw
+            /etc/ident.key</kbd></samp></p>
+
+            <p>authd will refuse to encrypt if this is not
+            done.</p>
+          </li>
+
+          <li>
+            To decrypt the string, the "<kbd>openssl</kbd>" tool
+            (using the "<kbd>enc</kbd>" sub-tool) is needed. If the
+            base64 encrypted string is longer than 64 characters,
+            it will need to be broken into multiple lines of 64
+            characters or less (why? because openssl enc -base64
+            doesn't like it any other way-- even though base64 only
+            needs line breaks for e-mail). Feed the short base64
+            string into the command: 
+
+            <p><samp>$ <kbd>/usr/bin/openssl enc -d -base64
+            -aes-128-cbc -pass file:/etc/ident.key</kbd></samp></p>
+
+            <p>(Change the cipher to what's appropriate if you did
+            not use the default for the "<kbd>-E</kbd>" authd
+            option or the default was changed in
+            <samp>config.h</samp>) Use <kbd>enc</kbd>'s
+            <kbd>-in</kbd> option if the base64 encryption is
+            stored in a file rather than being piped into
+            stdin)</p>
+          </li>
+
+          <li><strong>Do understand the security ramifications of
+          storing a password/pass phrase in unencrypted form on a
+          file system.</strong> A system is secure if the cost of
+          breaking the system is greater than the value of the
+          data. Thus, do not increase the value of the authd
+          password by using it anywhere else-- it should only be
+          used to encrypt usernames &amp; userids and address/port
+          info returned by "<kbd>--verbose</kbd>" -- (relatively
+          low value information already readable by any local
+          user)</li>
+        </ol>
+      </li>
+
+      <li>
+        INTERNATIONALIZATION 
+
+        <ul>
+          <li>Sometimes, the username and/or gecos field returned
+          by the system may not be in ASCII. An example would be a
+          system that authenticates against accounts stored on
+          Windows. Windows permits non-ASCII in their usernames and
+          Name/Comment descriptions. In these cases, use the
+          "<kbd>--codeset</kbd>" option to specify the character
+          encoding/charset used. This will <em>not</em> convert any
+          messages; it will simply inform the client as to the
+          character encoding. The character encoding will
+          <em>not</em> be sent to the client if the response
+          appears to be all ASCII (all printable characters; no
+          control characters), even if the option is
+          specified.</li>
+
+          <li>in the rare case that the string to be sent is not
+          ASCII, a <kbd>--codeset</kbd> has been specified without
+          the optional parameter, and the program is unable to
+          determine the codeset used by the operating system,
+          "<samp>X-UNKNOWN</samp>" will be returned as the
+          codeset.</li>
+
+          <li>
+            You may want error messages (also local timestamps with
+            the --verbose option) to be sent in a different locale
+            from the current locale (inetd/xinetd often is
+            configured to launch daemons in the "<kbd>C</kbd>"
+            locale). The locale to use can be configured with the
+            "<kbd>--lang</kbd>" option. By default, the daemon
+            starts in the locale of the parent (usually
+            xinetd/inetd) that launched it. If <kbd>--codeset</kbd>
+            is also specified, it overrides the character encoding
+            of the specified locale. 
+
+            <p>Be aware that many system log daemons are not
+            capable of handling non-ASCII yet, so combining this
+            with the "<kbd>-l</kbd>" option may not produce
+            readable syslog messages.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        EXTENDED ERROR MESSAGES 
+
+        <p>These only appear when authd is launched with the
+        "<kbd>--xerror</kbd>" option, because some server
+        administrators do not believe in giving outsiders any
+        useful information regarding the state of their servers.
+        However, the <kbd>--xerror</kbd> is useful for diagnostics
+        and troubleshooting.</p>
+
+        <ul>
+          <li>
+            <samp>X-PROC</samp><br>
+             either <samp>/proc/net/tcp</samp> or
+            <samp>/proc/net/tcp6</samp> was not in the format that
+            authd expected it to be in. This may be because: 
+
+            <ol>
+              <li>the files are not part of a true linux
+              <samp>/proc</samp> filesystem</li>
+
+              <li>you are running a modified or experimental
+              kernel</li>
+
+              <li>you are running a kernel much newer than this
+              program's last update and the file format has
+              changed</li>
+
+              <li>the proc file macros in config.h have been
+              changed to point to something else</li>
+            </ol>
+          </li>
+
+          <li><samp>X-NAME</samp><br>
+           A username was specified as an argument, but the
+          username couldn't be found in the password database
+          (<samp>/etc/passwd</samp>, NIS, or whatever the system
+          uses).</li>
+
+          <li><samp>X-UID</samp><br>
+           The UID taken from <samp>/proc/net/tcp6</samp> or
+          <samp>/proc/net/tcp</samp> couldn't be found in the
+          password database.</li>
+
+          <li><samp>X-FILE</samp><br>
+           The pathname for the <samp>.ident</samp> or
+          <samp>.noident</samp> file (home directory path +
+          filename) was excessively long or bogus.</li>
+
+          <li><samp>X-CRYPTO</samp><br>
+           Suffixed by zero or more sequences of dashes and eight
+          digit hexadecimal numbers. Either the pass phrase file
+          couldn't be opened (wrong filename, doesn't exist, wrong
+          permissions (must be readable by authd and NOT
+          readable/writable by "others"), the pass phrase was too
+          short for the given encryption, the crypto algorithm was
+          inappropriate for the type of data (for example, not
+          symmetric or does not permit non-fixed lengths), or some
+          other internal (usually memory resource related)
+          condition.</li>
+
+          <li><samp>X-ERRNO</samp><br>
+           Suffixed with a dash and a decimal number corresponding
+          to what was returned by errno. Usually will occur due to
+          an I/O error or an out-of-memory condition. On Linux,
+          <samp>2</samp> is a "file not found" and <samp>12</samp>
+          is an out of memory condition. Note that some out of
+          memory conditions will cause the server to exit before
+          printing a message.<br>
+          </li>
+
+          <li><samp>X-RFC1413</samp><br>
+           The userid reply was longer than 512 characters and/or
+          contained CRLF. While this shouldn't happen with sane
+          data, this could possibly occur if an exceptionally
+          long/strange gecos field and the combination of
+          "<kbd>--verbose</kbd>" and "<kbd>--fn</kbd>".</li>
+        </ul>
+      </li>
+    </ol>
+  </body>
+</html>
+
