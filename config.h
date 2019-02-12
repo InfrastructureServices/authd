@@ -11,7 +11,7 @@
 // controls where files are installed and how the prog IDs itself
 
 #define PACKAGE		"authd"		// must match gettext MO filename
-#define VERSION		"1.4.3"		// should match rpm.spec %{version}
+#define VERSION		"1.4.4"		// should match rpm.spec %{version}
 
 #define CONTACT		"http://bugzilla.redhat.com/"
 
