@@ -3,9 +3,10 @@ exec_prefix=$(prefix)
 sbindir=$(exec_prefix)/sbin
 datadir=$(prefix)/share
 
-PACKAGE=$(shell gcc -E -dM config.h|awk '$$2=="PACKAGE"{gsub(/"/,"");print$$3}')
-VERSION=$(shell gcc -E -dM config.h|awk '$$2=="VERSION"{gsub(/"/,"");print$$3}')
-URL=$(shell gcc -E -dM config.h|awk '$$2=="CONTACT"{gsub(/"/,"");print$$3}')
+CC = gcc
+PACKAGE=$(shell $(CPP) -dM config.h|awk '$$2=="PACKAGE"{gsub(/"/,"");print$$3}')
+VERSION=$(shell $(CPP) -dM config.h|awk '$$2=="VERSION"{gsub(/"/,"");print$$3}')
+URL=$(shell $(CPP) -dM config.h|awk '$$2=="CONTACT"{gsub(/"/,"");print$$3}')
 
 PROJECT_ID := $(PACKAGE)-$(VERSION)
 
@@ -21,7 +22,7 @@ all: $(targets)
 ja.mo: ja.po
 
 in.authd: authd.c config.h
-	gcc $(CFLAGS) $(LDFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 authd.pot: authd.c
 
 
