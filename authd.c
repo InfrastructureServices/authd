@@ -806,7 +806,7 @@ static bool initialize_crypto(crypto_t *x, const char *filename) {
     assert(filename != NULL && x != NULL);
     if (stat(filename, &file) == 0) {
         FILE *stream; ssize_t len;
-        const EVP_MD *const HASH = EVP_md5();   // openssl compat: enc -pass
+        const EVP_MD *const HASH = EVP_sha256();   // openssl compat: enc -pass
         const size_t KEY_SIZE = EVP_CIPHER_key_length(x->cipher);
         const size_t IV_SIZE = EVP_CIPHER_iv_length(x->cipher);
         char *pass = NULL; size_t z = 0;
@@ -820,8 +820,8 @@ static bool initialize_crypto(crypto_t *x, const char *filename) {
         if (fclose(stream) == EOF) return false;
         if (len > 0 && pass[(size_t) (len - 1)] == '\n')
             pass[(size_t) --len] = '\0';
-        if (RAND_pseudo_bytes(x->salt, sizeof(x->salt)) <= 0) return false;
-        EVP_BytesToKey(x->cipher, HASH, x->salt, pass, len, 1, x->key, x->iv);
+        if (RAND_bytes(x->salt, sizeof(x->salt)) <= 0) return false;
+        EVP_BytesToKey(x->cipher, HASH, x->salt, (const unsigned char*)pass, len, 1, x->key, x->iv);
         memset(pass, 0, len);                           // XXX: crypto erase
         free(pass);
         is_initialized = true;
