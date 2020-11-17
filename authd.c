@@ -620,6 +620,25 @@ typedef struct {
 static const size_t USERID_MAX_LEN = 512; // as per RFC1413 <octet-string>
 static const char *const TEXT_READ_MODE = "r"; // passphrase, /proc plaintext
 
+
+static char *created_verbose(const char *name, unsigned long id,
+                             const char *laddr, unsigned long lport,
+                             const char *raddr, unsigned long rport) {
+    size_t n; time_t tod;
+    char *s, when[USERID_MAX_LEN], *host1, *port1, *host2, *port2;
+    const char *const UTC_FMT = "%FT%TZ", *const TZ_FMT = "(%a %EX %z/%Z)";
+    const char *const VERBOSE_FMT = "%s:%lu,%s,%s|%s,%s|%s";
+
+    if (time(&tod) == (time_t) -1) handle_error(NULL);
+    n = strftime(when, sizeof(when), UTC_FMT, gmtime(&tod));
+    strftime(when + n, sizeof(when) - n, TZ_FMT, localtime(&tod));
+    host1 = created_hostname(laddr); port1 = created_servicename(lport);
+    host2 = created_hostname(raddr); port2 = created_servicename(rport);
+    asprintf(&s, VERBOSE_FMT, name, id, when, host1, port1, host2, port2);
+    free(host1); free(port1); free(host2); free(port2);
+    return s;
+}
+
 static bool get_info(reply_t *out, request_t in, const char *tcpname) {
     //unsigned long lport, rport, uid, status; FILE *stream;
     unsigned long lport, rport, status; FILE *stream;
@@ -628,22 +647,6 @@ static bool get_info(reply_t *out, request_t in, const char *tcpname) {
     unsigned lineno = 0;
     char *laddr = NULL, *raddr = NULL;
     bool is_port_pair_found = false;
-
-    char *created_verbose(const char *name, unsigned long id) {
-        size_t n; time_t tod;
-        char *s, when[USERID_MAX_LEN], *host1, *port1, *host2, *port2;
-        const char *const UTC_FMT = "%FT%TZ", *const TZ_FMT = "(%a %EX %z/%Z)";
-        const char *const VERBOSE_FMT = "%s:%lu,%s,%s|%s,%s|%s";
-
-        if (time(&tod) == (time_t) -1) handle_error(NULL);
-        n = strftime(when, sizeof(when), UTC_FMT, gmtime(&tod));
-        strftime(when + n, sizeof(when) - n, TZ_FMT, localtime(&tod));
-        host1 = created_hostname(laddr); port1 = created_servicename(lport);
-        host2 = created_hostname(raddr); port2 = created_servicename(rport);
-        asprintf(&s, VERBOSE_FMT, name, id, when, host1, port1, host2, port2);
-        free(host1); free(port1); free(host2); free(port2);
-        return s;
-    }
 
     assert(out != NULL);
     if (tcpname == NULL) return false;
@@ -779,7 +782,7 @@ static bool get_info(reply_t *out, request_t in, const char *tcpname) {
             if (opt.verbose && !out->error) {
                 char *brief = out->s;
 
-                if ((out->s = created_verbose(brief, uid)) == NULL)
+                if ((out->s = created_verbose(brief, uid, laddr, lport, raddr, rport)) == NULL)
                     out->error = true;
                 else free(brief);
             }
