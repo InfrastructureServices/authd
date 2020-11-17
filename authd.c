@@ -478,7 +478,7 @@ static request_t created_request(int argc, char *argv[]) {
 
 static char *created_hostname(const char *node) {
     char *s;
-    struct addrinfo *res, hints = { ai_flags: AI_CANONNAME };
+    struct addrinfo *res, hints = { .ai_flags = AI_CANONNAME };
 
     assert(node != NULL && *node != '\0');
     if (opt.resolve && getaddrinfo(node, NULL, &hints, &res) == 0) {
@@ -863,7 +863,7 @@ static char *created_ciphertext_b64(const char *s) {
     BIO *encoder; char *b64;
     const char *const MAGIC = "Salted__";       // openssl compat: enc -salt
     const char *const NL = "\n";                // is strcat()ed to plaintext
-    crypto_t x = { cipher: NULL };
+    crypto_t x = { .cipher = NULL };
 
     assert(s != NULL);
     OpenSSL_add_all_ciphers();
@@ -908,7 +908,7 @@ static char *created_ciphertext_b64(const char *s) {
 }
 
 static reply_t created_reply(request_t in) {
-    reply_t out = { lport: 0, rport: 0 };
+    reply_t out = { .lport = 0, .rport = 0 };
     bool is_invalid_port = false;
     unsigned attempts = 0;
 
